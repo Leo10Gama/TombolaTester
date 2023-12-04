@@ -2,6 +2,7 @@
 
 
 from enum import Enum
+import json
 from random import sample
 from typing import List
 
@@ -54,9 +55,16 @@ class TombolaCard:
         self.card = [numbers[0:5], numbers[5:10], numbers[10:15]]
         self.status = TombolaStatus.NOTHING
         self._marked_per_row = [0, 0, 0]
+        self._validate_card()
 
     def __repr__(self):
         result = f"Card {self.card_id}:\n"
+        if self.card_id > 100:  # Caller card
+            for card_row in self.card:
+                for number in card_row:
+                    result += f"|{number:2}"
+                result += "|\n"
+            return result[:-1]
         for card_row in self.card:
             card_index = 0
             for i in range(9):
@@ -67,6 +75,19 @@ class TombolaCard:
                     result += "|  "
             result += "|\n"
         return result[:-1]  # trim last '\n'
+    
+    def _validate_card(self):
+        """Validate that a card is correct."""
+        if self.card_id > 100: return  # One of the caller cards; ignore
+        for row in self.card:
+            sorted_row = row
+            sorted_row.sort()
+            if row != sorted_row:
+                raise ValueError(f"Row '{row}' on card '{self.card_id}' is out of numerical order.")
+            for number in row:
+                if number < 1 or number > 90:
+                    raise ValueError(f"Card '{self.card_id}' contains invalid number: {number}")
+
 
     def mark_number(self, number: int) -> TombolaStatus:
         """Mark a number from the card, returning the status after marking."""
@@ -80,6 +101,14 @@ class TombolaCard:
                 break
         return self.status
 
+def import_cards() -> List[TombolaCard]:
+    cards: List[TombolaCard] = []
+    with open("cards.json", "r") as f:
+        cards_json = json.load(f)
+        for card_id, numbers in cards_json.items():
+            cards.append(TombolaCard(int(card_id), numbers))
+    return cards
+
 def demo():
     card = TombolaCard(23, [23, 32, 51, 64, 83, 8, 15, 35, 57, 72, 16, 29, 48, 78, 87])
     print(card)
@@ -91,6 +120,6 @@ def demo():
             print("Game over!")
             break
 
-    
 if __name__=='__main__':
-    demo()
+    for card in import_cards():
+        print(card)
