@@ -1,6 +1,7 @@
 """Representation of a Tombola card."""
 
 
+from collections import defaultdict
 from enum import Enum
 import json
 from random import sample
@@ -41,7 +42,6 @@ class TombolaCard:
     card_id: int
     card: List[List[int]]
     status: TombolaStatus
-    _marked_per_row: List[int]
 
     def __init__(self, card_id: int, numbers: List[int]):
         """Constructor for the TombolaCard.
@@ -87,7 +87,10 @@ class TombolaCard:
             for number in row:
                 if number < 1 or number > 90:
                     raise ValueError(f"Card '{self.card_id}' contains invalid number: {number}")
-
+    
+    def reset_card(self):
+        self.status = TombolaStatus.NOTHING
+        self._marked_per_row = [0, 0, 0]
 
     def mark_number(self, number: int) -> TombolaStatus:
         """Mark a number from the card, returning the status after marking."""
@@ -109,6 +112,17 @@ def import_cards() -> List[TombolaCard]:
             cards.append(TombolaCard(int(card_id), numbers))
     return cards
 
+def card_stats():
+    cards = import_cards()
+    # How many of each number are there
+    count_of_numbers = defaultdict(int)
+    for card in cards:
+        for row in card.card:
+            for number in row:
+                count_of_numbers[number] += 1
+    for k, v in count_of_numbers.items():
+        print(f"{k:2}: {v}")
+
 def demo():
     card = TombolaCard(23, [23, 32, 51, 64, 83, 8, 15, 35, 57, 72, 16, 29, 48, 78, 87])
     print(card)
@@ -121,5 +135,4 @@ def demo():
             break
 
 if __name__=='__main__':
-    for card in import_cards():
-        print(card)
+    card_stats()
